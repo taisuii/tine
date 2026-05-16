@@ -44,9 +44,9 @@ ext {
     ndkVersion = "25.2.9519653"
     cmakeVersion = "3.22.1"
     userOrg = 'canyie'
-    groupId = 'top.canyie.pine'
-    repoName = 'pine'
-    website = "https://github.com/canyie/pine"
+    groupId = 'com.android.tine'
+    repoName = 'tine'
+    website = "https://github.com/canyie/Tine"
 }
 
 ext.uploadRepositories = {
@@ -68,8 +68,8 @@ ext.licenses = {
 }
 
 ext.scm = {
-    connection = 'scm:git:https://github.com/canyie/pine.git'
-    url = 'https://github.com/canyie/pine'
+    connection = 'scm:git:https://github.com/canyie/Tine.git'
+    url = 'https://github.com/canyie/Tine'
 }
 
 ext.developers = {

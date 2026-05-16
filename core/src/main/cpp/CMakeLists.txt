@@ -20,8 +20,8 @@ set(XZ_EMBEDDED_SOURCE
         external/xz-embedded/linux/lib/xz/xz_dec_lzma2.c
         external/xz-embedded/linux/lib/xz/xz_dec_stream.c)
 
-set(PINE_SOURCES
-        pine.cpp
+set(TINE_SOURCES
+        tine.cpp
         ruler.cpp
         android.cpp
         jni_bridge.cpp
@@ -37,30 +37,30 @@ set(PINE_SOURCES
 
 if (CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v7a")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -arch armv7")
-    set(PINE_SOURCES
-            ${PINE_SOURCES}
+    set(TINE_SOURCES
+            ${TINE_SOURCES}
             trampoline/arch/thumb2.cpp
             trampoline/arch/thumb2.S)
 elseif(CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -arch arm64")
-    set(PINE_SOURCES
-            ${PINE_SOURCES}
+    set(TINE_SOURCES
+            ${TINE_SOURCES}
             trampoline/arch/arm64.cpp
             trampoline/arch/arm64.S)
 elseif(CMAKE_ANDROID_ARCH_ABI STREQUAL "x86")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -arch x86")
-    set(PINE_SOURCES
-            ${PINE_SOURCES}
+    set(TINE_SOURCES
+            ${TINE_SOURCES}
             trampoline/arch/x86.cpp)
 else()
     message(FATAL_ERROR "Unsupported cpu abi ${CMAKE_ANDROID_ARCH_ABI} (Only armeabi-v7a and arm64-v8a are now supported)!")
 endif()
 
-add_library(pine SHARED ${PINE_SOURCES})
+add_library(tine SHARED ${TINE_SOURCES})
 
 find_library(log-lib log)
 find_package(cxx REQUIRED CONFIG)
 
-target_link_libraries(pine ${log-lib} cxx::cxx)
+target_link_libraries(tine ${log-lib} cxx::cxx)
 
 ENABLE_LANGUAGE(ASM)

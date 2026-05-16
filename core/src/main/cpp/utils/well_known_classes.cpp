@@ -5,7 +5,7 @@
 #include "well_known_classes.h"
 #include "../android.h"
 
-using namespace pine;
+using namespace tine;
 
 jclass WellKnownClasses::java_lang_reflect_ArtMethod = nullptr;
 jfieldID WellKnownClasses::java_lang_reflect_Executable_artMethod = nullptr;

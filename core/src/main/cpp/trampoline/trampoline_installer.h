@@ -17,7 +17,7 @@ if (UNLIKELY(((inst) & (mask)) == op)) return true
 #define AS_PTR_NUM(value) (reinterpret_cast<uintptr_t>(value))
 #define PTR_SIZE (sizeof(void*))
 
-namespace pine {
+namespace tine {
     class TrampolineInstaller {
     public:
         static TrampolineInstaller* GetOrInitDefault();

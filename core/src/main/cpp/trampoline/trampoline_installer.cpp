@@ -4,7 +4,7 @@
 
 #include "trampoline_installer.h"
 #include "extras.h"
-#include "../pine_config.h"
+#include "../tine_config.h"
 #include "../utils/memory.h"
 #include "../utils/scoped_memory_access_protection.h"
 
@@ -18,7 +18,7 @@
 #error unsupported architecture
 #endif
 
-using namespace pine;
+using namespace tine;
 
 TrampolineInstaller* TrampolineInstaller::default_ = nullptr;
 
@@ -176,7 +176,7 @@ TrampolineInstaller::InstallReplacementTrampoline(art::ArtMethod* target, art::A
     target->SetEntryPointFromCompiledCode(bridge_jump_trampoline);
     // return call_origin_trampoline;
 
-    if (PineConfig::debug)
+    if (TineConfig::debug)
         LOGD("InstallReplacementTrampoline: origin %p origin_entry %p bridge_jump %p",
                 target, origin_code_entry, bridge_jump_trampoline);
 
@@ -190,7 +190,7 @@ TrampolineInstaller::InstallDirectJumpReplacementTrampoline(art::ArtMethod* targ
     if (UNLIKELY(!trampoline)) return nullptr;
     target->SetEntryPointFromCompiledCode(trampoline);
 
-    if (PineConfig::debug)
+    if (TineConfig::debug)
         LOGD("InstallDirectJumpReplacementTrampoline: origin %p origin_entry %p jump_to %p",
              target, origin_code_entry, trampoline);
 
@@ -226,7 +226,7 @@ void* TrampolineInstaller::InstallInlineTrampoline(art::ArtMethod* target, art::
         }
     }
 
-    if (PineConfig::debug)
+    if (TineConfig::debug)
         LOGD("InstallInlineTrampoline: target_code_addr %p backup %p bridge_jump %p",
                 target_code_addr, backup, bridge_jump_trampoline);
 
@@ -264,7 +264,7 @@ void* TrampolineInstaller::InstallDirectJumpInlineTrampoline(art::ArtMethod* tar
         }
     }
 
-    if (PineConfig::debug)
+    if (TineConfig::debug)
         LOGD("InstallInlineTrampoline: target_code_addr %p backup %p jump_trampoline %p",
              target_code_addr, backup, method_jump_trampoline);
 

@@ -9,7 +9,7 @@ jint DirectRegisterJNITest_target(JNIEnv*, jclass, jint arg) {
 }
 
 extern "C"
-JNIEXPORT jint JNICALL Java_top_canyie_pine_examples_test_DynamicLookupJNITest_target(
+JNIEXPORT jint JNICALL Java_top_canyie_tine_examples_test_DynamicLookupJNITest_target(
         JNIEnv*, jclass, jint i) {
     return i * i;
 }
@@ -23,7 +23,7 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM* jvm, void*) {
     if (jvm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-    jclass clazz = env->FindClass("top/canyie/pine/examples/test/DirectRegisterJNITest");
+    jclass clazz = env->FindClass("com/android/tine/examples/test/DirectRegisterJNITest");
     if (clazz == nullptr) {
         return JNI_ERR;
     }

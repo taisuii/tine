@@ -13,17 +13,17 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     }
 
     {
-        ScopedLocalClassRef Pine(env, "top/canyie/pine/Pine");
-        if (UNLIKELY(Pine.IsNull())) {
+        ScopedLocalClassRef Tine(env, "com/android/tine/Tine");
+        if (UNLIKELY(Tine.IsNull())) {
             return JNI_ERR;
         }
-        if (UNLIKELY(!register_Pine(env, Pine.Get()))) {
+        if (UNLIKELY(!register_Tine(env, Tine.Get()))) {
             return JNI_ERR;
         }
     }
 
     {
-        ScopedLocalClassRef Ruler(env, "top/canyie/pine/Ruler");
+        ScopedLocalClassRef Ruler(env, "com/android/tine/Ruler");
         if (UNLIKELY(Ruler.IsNull())) {
             return JNI_ERR;
         }

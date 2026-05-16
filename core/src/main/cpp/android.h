@@ -13,7 +13,7 @@
 #include "utils/macros.h"
 #include "utils/elf_image.h"
 
-namespace pine {
+namespace tine {
     class ScopedGCCriticalSection {
     public:
         ALWAYS_INLINE ScopedGCCriticalSection(void* self, art::GcCause cause, art::CollectorType collector);
@@ -152,7 +152,7 @@ namespace pine {
     class ScopedSuspendVM {
     public:
         ScopedSuspendVM(void* self) {
-            Android::SuspendVM(this, self, "pine hook method");
+            Android::SuspendVM(this, self, "tine hook method");
         }
 
         ~ScopedSuspendVM() {

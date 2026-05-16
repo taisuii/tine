@@ -10,19 +10,19 @@ name:
 .global name; \
 name:
 
-FUNCTION(pine_thumb_direct_jump_trampoline)
-ldr pc, pine_thumb_direct_jump_trampoline_jump_entry
-VAR(pine_thumb_direct_jump_trampoline_jump_entry)
+FUNCTION(tine_thumb_direct_jump_trampoline)
+ldr pc, tine_thumb_direct_jump_trampoline_jump_entry
+VAR(tine_thumb_direct_jump_trampoline_jump_entry)
 .long 0
 
-FUNCTION(pine_thumb_bridge_jump_trampoline)
-ldr ip, pine_thumb_bridge_jump_trampoline_target_method
+FUNCTION(tine_thumb_bridge_jump_trampoline)
+ldr ip, tine_thumb_bridge_jump_trampoline_target_method
 cmp r0, ip
 
 IT NE
-ldrne pc, pine_thumb_bridge_jump_trampoline_call_origin_entry
+ldrne pc, tine_thumb_bridge_jump_trampoline_call_origin_entry
 
-ldr ip, pine_thumb_bridge_jump_trampoline_extras
+ldr ip, tine_thumb_bridge_jump_trampoline_extras
 str r4, [sp, #-128] // Backup R4 because we clobbered it in the next STREX instruction
 
 acquire_lock:
@@ -57,54 +57,54 @@ vstr.64 d4, [ip, #48]
 vstr.64 d5, [ip, #56]
 vstr.64 d6, [ip, #64]
 vstr.64 d7, [ip, #72]
-ldr r1, pine_thumb_bridge_jump_trampoline_target_method // first param = callee ArtMethod
+ldr r1, tine_thumb_bridge_jump_trampoline_target_method // first param = callee ArtMethod
 mov r2, ip // second param = extras (saved r1, r2, r3)
 mov r3, sp // third param = sp
-ldr r0, pine_thumb_bridge_jump_trampoline_bridge_method
-ldr pc, pine_thumb_bridge_jump_trampoline_bridge_entry
+ldr r0, tine_thumb_bridge_jump_trampoline_bridge_method
+ldr pc, tine_thumb_bridge_jump_trampoline_bridge_entry
 nop // Alignment padding (unreachable)
-VAR(pine_thumb_bridge_jump_trampoline_target_method)
+VAR(tine_thumb_bridge_jump_trampoline_target_method)
 .long 0
-VAR(pine_thumb_bridge_jump_trampoline_extras)
+VAR(tine_thumb_bridge_jump_trampoline_extras)
 .long 0
-VAR(pine_thumb_bridge_jump_trampoline_bridge_method)
+VAR(tine_thumb_bridge_jump_trampoline_bridge_method)
 .long 0
-VAR(pine_thumb_bridge_jump_trampoline_bridge_entry)
+VAR(tine_thumb_bridge_jump_trampoline_bridge_entry)
 .long 0
-VAR(pine_thumb_bridge_jump_trampoline_call_origin_entry)
-.long 0
-
-FUNCTION(pine_thumb_method_jump_trampoline)
-ldr r0, pine_thumb_method_jump_trampoline_dest_method
-ldr pc, pine_thumb_method_jump_trampoline_dest_entry
-VAR(pine_thumb_method_jump_trampoline_dest_method)
-.long 0
-.long 0
-VAR(pine_thumb_method_jump_trampoline_dest_entry)
-.long 0
+VAR(tine_thumb_bridge_jump_trampoline_call_origin_entry)
 .long 0
 
-FUNCTION(pine_thumb_call_origin_trampoline)
-ldr r0, pine_thumb_call_origin_trampoline_origin_method
-ldr pc, pine_thumb_call_origin_trampoline_origin_code_entry
-VAR(pine_thumb_call_origin_trampoline_origin_method)
+FUNCTION(tine_thumb_method_jump_trampoline)
+ldr r0, tine_thumb_method_jump_trampoline_dest_method
+ldr pc, tine_thumb_method_jump_trampoline_dest_entry
+VAR(tine_thumb_method_jump_trampoline_dest_method)
 .long 0
-VAR(pine_thumb_call_origin_trampoline_origin_code_entry)
+.long 0
+VAR(tine_thumb_method_jump_trampoline_dest_entry)
+.long 0
 .long 0
 
-FUNCTION(pine_thumb_backup_trampoline)
-ldr r0, pine_thumb_backup_trampoline_origin_method
-VAR(pine_thumb_backup_trampoline_override_space)
+FUNCTION(tine_thumb_call_origin_trampoline)
+ldr r0, tine_thumb_call_origin_trampoline_origin_method
+ldr pc, tine_thumb_call_origin_trampoline_origin_code_entry
+VAR(tine_thumb_call_origin_trampoline_origin_method)
+.long 0
+VAR(tine_thumb_call_origin_trampoline_origin_code_entry)
+.long 0
+
+FUNCTION(tine_thumb_backup_trampoline)
+ldr r0, tine_thumb_backup_trampoline_origin_method
+VAR(tine_thumb_backup_trampoline_override_space)
 .long 0 // 4 bytes (will be overwritten)
 .long 0 // 4 bytes (will be overwritten)
 nop // 2 bytes, may be overwritten for anti checks
 nop // 2 bytes, may be overwritten for anti checks
 nop // 2 bytes (may be overwritten)
-ldr pc, pine_thumb_backup_trampoline_remaining_code_entry
-VAR(pine_thumb_backup_trampoline_origin_method)
+ldr pc, tine_thumb_backup_trampoline_remaining_code_entry
+VAR(tine_thumb_backup_trampoline_origin_method)
 .long 0
-VAR(pine_thumb_backup_trampoline_remaining_code_entry)
+VAR(tine_thumb_backup_trampoline_remaining_code_entry)
 .long 0
 
-FUNCTION(pine_thumb_trampolines_end)
+FUNCTION(tine_thumb_trampolines_end)
 // End tag used for calculate size only

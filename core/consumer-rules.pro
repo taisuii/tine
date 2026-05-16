@@ -1,5 +1,5 @@
-# Pine
--keep class top.canyie.pine.Pine {
+# Tine
+-keep class com.android.tine.Tine {
     public static long openElf;
     public static long findElfSymbol;
     public static long closeElf;
@@ -9,12 +9,12 @@
     public static long resumeVM;
     private static int arch;
 }
--keep class top.canyie.pine.Pine$HookRecord {
+-keep class com.android.tine.Tine$HookRecord {
     public long trampoline;
 }
--keep class top.canyie.pine.Ruler { *; }
--keep class top.canyie.pine.Ruler$I { *; }
--keep class top.canyie.pine.entry.**Entry {
+-keep class com.android.tine.Ruler { *; }
+-keep class com.android.tine.Ruler$I { *; }
+-keep class com.android.tine.entry.**Entry {
     static *** **Bridge(...);
 }
 

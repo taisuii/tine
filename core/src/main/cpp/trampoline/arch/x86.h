@@ -7,7 +7,7 @@
 
 #include "../trampoline_installer.h"
 
-namespace pine {
+namespace tine {
     class X86TrampolineInstaller final : public TrampolineInstaller {
     public:
         X86TrampolineInstaller() : TrampolineInstaller(0, true) {

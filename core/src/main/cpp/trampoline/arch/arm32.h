@@ -9,7 +9,7 @@
 #include "../trampoline_installer.h"
 #include "../../utils/macros.h"
 
-namespace pine {
+namespace tine {
     class Arm32TrampolineInstaller final : public TrampolineInstaller {
     public:
         Arm32TrampolineInstaller() : TrampolineInstaller(4) {

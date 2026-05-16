@@ -18,7 +18,7 @@
 #include "macros.h"
 #include "../android.h"
 
-using namespace pine;
+using namespace tine;
 
 void ElfImage::Open(const char* path, bool warn_if_nonexist, bool warn_if_symtab_not_found) {
     int fd = WrappedOpen(path, O_RDONLY | O_CLOEXEC);

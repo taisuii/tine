@@ -10,7 +10,7 @@
 #include "../utils/scoped_local_ref.h"
 #include "../utils/memory.h"
 
-using namespace pine::art;
+using namespace tine::art;
 
 uint32_t ArtMethod::kAccCompileDontBother = 0;
 uint32_t ArtMethod::kAccPreCompiled = 0;
@@ -212,10 +212,10 @@ void ArtMethod::InitMembers(JNIEnv* env, ArtMethod* m1, ArtMethod* m2, ArtMethod
 #endif
 
     if (UNLIKELY(throw_invocation_time_error)) {
-        // See https://github.com/canyie/pine/issues/8
+        // See https://github.com/canyie/Tine/issues/8
         if (UNLIKELY(m3->TestDontCompile(env))) {
             LOGW("Detected android 8.1 runtime on android 8.0 device");
-            LOGW("For more info, see https://github.com/canyie/pine/issues/8");
+            LOGW("For more info, see https://github.com/canyie/Tine/issues/8");
             kAccCompileDontBother = AccessFlags::kCompileDontBother_O_MR1;
         }
     }
@@ -290,7 +290,7 @@ void ArtMethod::AfterHook(bool is_inline_hook, bool is_native_or_proxy) {
     }
 
     if (Android::version >= Android::kO && !is_inline_hook) {
-        if (UNLIKELY(PineConfig::debuggable && !is_native_or_proxy)) {
+        if (UNLIKELY(TineConfig::debuggable && !is_native_or_proxy)) {
             // Android 8.0+ and debug mode, ART may force the use of interpreter mode,
             // and entry_point_from_compiled_code_ will be ignored. Set kAccNative to avoid it.
             // See ClassLinker::ShouldUseInterpreterEntrypoint(ArtMethod*, const void*)

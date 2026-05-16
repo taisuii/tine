@@ -36,7 +36,7 @@ typedef Elf32_Off Elf_Off;
 #define ELF_R_SYM(i) ELF32_R_SYM(i)
 #endif
 
-namespace pine {
+namespace tine {
     class ElfImage {
     public:
         ElfImage(const char* elf, bool warn_if_nonexist = true, bool warn_if_symtab_not_found = true) {
@@ -64,7 +64,7 @@ namespace pine {
     private:
         void ParseMemory(Elf_Ehdr* header, bool is_debugdata);
         void ParseDebugdata(uint8_t* debugdata, size_t size);
-        // Pine changed: GetModuleBase is private
+        // Tine changed: GetModuleBase is private
         void* GetModuleBase(const char* name);
 
 #ifdef __LP64__

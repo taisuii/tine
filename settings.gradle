@@ -1,2 +1,2 @@
 include ':app', ':core', ':xposed', ':enhances'
-rootProject.name='Pine'
+rootProject.name='Tine'

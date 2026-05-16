@@ -6,48 +6,48 @@
 #include "../extras.h"
 #include "../../utils/memory.h"
 
-using namespace pine;
+using namespace tine;
 
 void Thumb2TrampolineInstaller::InitTrampolines() {
-    kDirectJumpTrampoline = ToAddress(AS_VOID_PTR(pine_thumb_direct_jump_trampoline));
+    kDirectJumpTrampoline = ToAddress(AS_VOID_PTR(tine_thumb_direct_jump_trampoline));
     kDirectJumpTrampolineEntryOffset = DirectJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_direct_jump_trampoline_jump_entry)));
+            ToAddress(AS_VOID_PTR(tine_thumb_direct_jump_trampoline_jump_entry)));
 
-    kBridgeJumpTrampoline = ToAddress(AS_VOID_PTR(pine_thumb_bridge_jump_trampoline));
+    kBridgeJumpTrampoline = ToAddress(AS_VOID_PTR(tine_thumb_bridge_jump_trampoline));
     kBridgeJumpTrampolineTargetMethodOffset = BridgeJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_bridge_jump_trampoline_target_method)));
+            ToAddress(AS_VOID_PTR(tine_thumb_bridge_jump_trampoline_target_method)));
     kBridgeJumpTrampolineExtrasOffset = BridgeJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_bridge_jump_trampoline_extras)));
+            ToAddress(AS_VOID_PTR(tine_thumb_bridge_jump_trampoline_extras)));
     kBridgeJumpTrampolineBridgeMethodOffset = BridgeJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_bridge_jump_trampoline_bridge_method)));
+            ToAddress(AS_VOID_PTR(tine_thumb_bridge_jump_trampoline_bridge_method)));
     kBridgeJumpTrampolineBridgeEntryOffset = BridgeJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_bridge_jump_trampoline_bridge_entry)));
+            ToAddress(AS_VOID_PTR(tine_thumb_bridge_jump_trampoline_bridge_entry)));
     kBridgeJumpTrampolineOriginCodeEntryOffset = BridgeJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_bridge_jump_trampoline_call_origin_entry)));
+            ToAddress(AS_VOID_PTR(tine_thumb_bridge_jump_trampoline_call_origin_entry)));
 
-    kMethodJumpTrampoline = ToAddress(AS_VOID_PTR(pine_thumb_method_jump_trampoline));
+    kMethodJumpTrampoline = ToAddress(AS_VOID_PTR(tine_thumb_method_jump_trampoline));
     kMethodJumpTrampolineDestMethodOffset = MethodJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_method_jump_trampoline_dest_method)));
+            ToAddress(AS_VOID_PTR(tine_thumb_method_jump_trampoline_dest_method)));
     kMethodJumpTrampolineDestEntryOffset = MethodJumpTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_method_jump_trampoline_dest_entry)));
+            ToAddress(AS_VOID_PTR(tine_thumb_method_jump_trampoline_dest_entry)));
 
-    kCallOriginTrampoline = ToAddress(AS_VOID_PTR(pine_thumb_call_origin_trampoline));
+    kCallOriginTrampoline = ToAddress(AS_VOID_PTR(tine_thumb_call_origin_trampoline));
     kCallOriginTrampolineOriginMethodOffset = CallOriginTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_call_origin_trampoline_origin_method)));
+            ToAddress(AS_VOID_PTR(tine_thumb_call_origin_trampoline_origin_method)));
     kCallOriginTrampolineOriginalEntryOffset = CallOriginTrampolineOffset(
-            ToAddress(AS_VOID_PTR(pine_thumb_call_origin_trampoline_origin_code_entry)));
+            ToAddress(AS_VOID_PTR(tine_thumb_call_origin_trampoline_origin_code_entry)));
 
-    kBackupTrampoline = ToAddress(AS_VOID_PTR(pine_thumb_backup_trampoline));
+    kBackupTrampoline = ToAddress(AS_VOID_PTR(tine_thumb_backup_trampoline));
     kBackupTrampolineOriginMethodOffset = BackupTrampolineOffset(
-            AS_VOID_PTR(pine_thumb_backup_trampoline_origin_method));
+            AS_VOID_PTR(tine_thumb_backup_trampoline_origin_method));
     kBackupTrampolineOverrideSpaceOffset = BackupTrampolineOffset(
-            AS_VOID_PTR(pine_thumb_backup_trampoline_override_space));
+            AS_VOID_PTR(tine_thumb_backup_trampoline_override_space));
     kBackupTrampolineRemainingCodeEntryOffset = BackupTrampolineOffset(
-            AS_VOID_PTR(pine_thumb_backup_trampoline_remaining_code_entry));
+            AS_VOID_PTR(tine_thumb_backup_trampoline_remaining_code_entry));
 
-    kTrampolinesEnd = ToAddress(AS_VOID_PTR(pine_thumb_trampolines_end));
+    kTrampolinesEnd = ToAddress(AS_VOID_PTR(tine_thumb_trampolines_end));
 
-    kDirectJumpTrampolineSize = 8; // Hardcoded size of pine_thumb_direct_jump_trampoline now :)
+    kDirectJumpTrampolineSize = 8; // Hardcoded size of tine_thumb_direct_jump_trampoline now :)
 }
 
 bool Thumb2TrampolineInstaller::IsThumb32PCRelatedInst(uint32_t inst) {

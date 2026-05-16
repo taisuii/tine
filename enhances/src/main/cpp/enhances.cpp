@@ -15,7 +15,7 @@
 #include <sys/mman.h>
 #include <dobby.h>
 
-#define LOG_TAG "PineEnhances"
+#define LOG_TAG "TineEnhances"
 #define EXPORT JNIEXPORT extern "C"
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -37,7 +37,7 @@ typedef struct {
 #define REDIRECT_ENTRY_UPDATE (nullptr)
 
 static JavaVM* jvm_;
-static jclass PineEnhances_;
+static jclass TineEnhances_;
 static jmethodID onClassInit_;
 static ClassDef(*GetClassDef)(void* cls) = nullptr;
 static size_t page_size_ = static_cast<const size_t>(sysconf(_SC_PAGESIZE));
@@ -131,7 +131,7 @@ void MaybeClassInit(void* ptr) {
     }
     if (!call_monitor) return;
     JNIEnv* env = CurrentEnv();
-    env->CallStaticVoidMethod(PineEnhances_, onClassInit_, reinterpret_cast<jlong>(ptr));
+    env->CallStaticVoidMethod(TineEnhances_, onClassInit_, reinterpret_cast<jlong>(ptr));
     if (env->ExceptionCheck()) {
         LOGE("Unexpected exception threw in onClassInit");
         env->ExceptionClear();
@@ -212,7 +212,7 @@ HOOK_ENTRY(InitializeMethodsCode, void, void* thiz, ArtMethod method, const void
     backup_InitializeMethodsCode(thiz, method, aot_code);
 }
 
-void PineEnhances_careClassInit(JNIEnv*, jclass, jlong address) {
+void TineEnhances_careClassInit(JNIEnv*, jclass, jlong address) {
     void* ptr = reinterpret_cast<void*>(address);
     auto class_def = GetClassDef(ptr);
     if (class_def == nullptr) {
@@ -226,7 +226,7 @@ void PineEnhances_careClassInit(JNIEnv*, jclass, jlong address) {
     cared_classes_.insert(class_def);
 }
 
-void PineEnhances_recordMethodHooked(JNIEnv*, jclass, jlong target, jlong entry, jlong backup) {
+void TineEnhances_recordMethodHooked(JNIEnv*, jclass, jlong target, jlong entry, jlong backup) {
     auto o = reinterpret_cast<ArtMethod>(target);
     auto b = reinterpret_cast<ArtMethod>(backup);
     {
@@ -263,7 +263,7 @@ void PineEnhances_recordMethodHooked(JNIEnv*, jclass, jlong target, jlong entry,
 }
 
 std::string GetRuntimeLibraryName(JNIEnv* env) {
-    // initClassInitMonitor will always be called after Pine core library is initialized
+    // initClassInitMonitor will always be called after Tine core library is initialized
     // At this time we can directly access hidden APIs
     jclass VMRuntime = env->FindClass("dalvik/system/VMRuntime");
     jmethodID getRuntime = VMRuntime
@@ -294,17 +294,17 @@ std::string GetRuntimeLibraryName(JNIEnv* env) {
     return "libart.so";
 }
 
-jboolean PineEnhances_initClassInitMonitor(JNIEnv* env, jclass PineEnhances, jint sdk_level,
+jboolean TineEnhances_initClassInitMonitor(JNIEnv* env, jclass TineEnhances, jint sdk_level,
                                            jlong openElf, jlong findElfSymbol, jlong closeElf,
                                            jlong getMethodDeclaringClass, jlong syncMethodEntry,
                                            jlong suspendVM, jlong resumeVM) {
-     onClassInit_ = env->GetStaticMethodID(PineEnhances, "onClassInit", "(J)V");
+     onClassInit_ = env->GetStaticMethodID(TineEnhances, "onClassInit", "(J)V");
      if (!onClassInit_) {
          LOGE("Unable to find onClassInit");
          return JNI_FALSE;
      }
-     PineEnhances_ = static_cast<jclass>(env->NewGlobalRef(PineEnhances));
-     if (!PineEnhances_) {
+     TineEnhances_ = static_cast<jclass>(env->NewGlobalRef(TineEnhances));
+     if (!TineEnhances_) {
          LOGE("Unable to make new global ref");
          return JNI_FALSE;
      }
@@ -386,12 +386,12 @@ jboolean PineEnhances_initClassInitMonitor(JNIEnv* env, jclass PineEnhances, jin
 }
 
  JNINativeMethod JNI_METHODS[] = {
-         {"initClassInitMonitor", "(IJJJJJJJ)Z", (void*) PineEnhances_initClassInitMonitor},
-         {"careClassInit", "(J)V", (void*) PineEnhances_careClassInit},
-         {"recordMethodHooked", "(JJJ)V", (void*) PineEnhances_recordMethodHooked}
+         {"initClassInitMonitor", "(IJJJJJJJ)Z", (void*) TineEnhances_initClassInitMonitor},
+         {"careClassInit", "(J)V", (void*) TineEnhances_careClassInit},
+         {"recordMethodHooked", "(JJJ)V", (void*) TineEnhances_recordMethodHooked}
 };
 
-EXPORT bool init_PineEnhances(JavaVM* jvm, JNIEnv* env, jclass cls) {
+EXPORT bool init_TineEnhances(JavaVM* jvm, JNIEnv* env, jclass cls) {
     jvm_ = jvm;
     return env->RegisterNatives(cls, JNI_METHODS, NELEM(JNI_METHODS)) == JNI_OK;
 }
@@ -402,13 +402,13 @@ EXPORT jint JNI_OnLoad(JavaVM* jvm, void*) {
         LOGE("Cannot get jni env");
         return JNI_ERR;
     }
-    jclass PineEnhances = env->FindClass("top/canyie/pine/enhances/PineEnhances");
-    if (PineEnhances == nullptr) {
-        LOGE("Cannot find class top/canyie/pine/enhances/PineEnhances");
+    jclass TineEnhances = env->FindClass("com/android/tine/enhances/TineEnhances");
+    if (TineEnhances == nullptr) {
+        LOGE("Cannot find class com/android/tine/enhances/TineEnhances");
         return JNI_ERR;
     }
-    if (!init_PineEnhances(jvm, env, PineEnhances)) {
-        LOGE("Cannot register native methods of class PineEnhances");
+    if (!init_TineEnhances(jvm, env, TineEnhances)) {
+        LOGE("Cannot register native methods of class TineEnhances");
         return JNI_ERR;
     }
     return JNI_VERSION_1_6;

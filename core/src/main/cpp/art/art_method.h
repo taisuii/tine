@@ -11,7 +11,7 @@
 #include <jni.h>
 #include "access_flags.h"
 #include "../android.h"
-#include "../pine_config.h"
+#include "../tine_config.h"
 #include "../utils/macros.h"
 #include "../utils/elf_image.h"
 #include "../utils/member.h"
@@ -20,7 +20,7 @@
 #include "jit.h"
 #include "../utils/lock.h"
 
-namespace pine::art {
+namespace tine::art {
     class ArtMethod final {
     public:
         static void Init(const ElfImage* handle);
@@ -73,7 +73,7 @@ namespace pine::art {
         bool Compile(Thread* thread) {
             if (LIKELY(IsCompiled())) return true;
             if (UNLIKELY(Android::version < Android::kN)) return false;
-            if (UNLIKELY(!PineConfig::jit_compilation_allowed)) return false;
+            if (UNLIKELY(!TineConfig::jit_compilation_allowed)) return false;
             if (UNLIKELY(HasAccessFlags(kAccCompileDontBother))) return false;
             return Jit::CompileMethod(thread, this);
         }

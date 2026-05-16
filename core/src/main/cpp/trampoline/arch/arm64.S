@@ -13,18 +13,18 @@ name##_addr:
 ldr reg, name##_addr;
 
 
-FUNCTION(pine_direct_jump_trampoline)
-LDVAR(x17, pine_direct_jump_trampoline_jump_entry)
+FUNCTION(tine_direct_jump_trampoline)
+LDVAR(x17, tine_direct_jump_trampoline_jump_entry)
 br x17
-VAR(pine_direct_jump_trampoline_jump_entry)
+VAR(tine_direct_jump_trampoline_jump_entry)
 .long 0
 .long 0
 
-FUNCTION(pine_bridge_jump_trampoline)
-LDVAR(x17, pine_bridge_jump_trampoline_target_method)
+FUNCTION(tine_bridge_jump_trampoline)
+LDVAR(x17, tine_bridge_jump_trampoline_target_method)
 cmp x0, x17
 bne jump_to_original
-LDVAR(x17, pine_bridge_jump_trampoline_extras)
+LDVAR(x17, tine_bridge_jump_trampoline_extras)
 b acquire_lock
 
 lock_failed:
@@ -51,68 +51,68 @@ str d7, [x17, #84]
 mov x1, x0 // first param = callee ArtMethod
 mov x2, x17 // second param = extras (saved x1, x2, x3)
 mov x3, sp // third param = sp
-LDVAR(x0, pine_bridge_jump_trampoline_bridge_method)
-LDVAR(x17, pine_bridge_jump_trampoline_bridge_entry)
+LDVAR(x0, tine_bridge_jump_trampoline_bridge_method)
+LDVAR(x17, tine_bridge_jump_trampoline_bridge_entry)
 br x17
 
 jump_to_original:
-LDVAR(x17, pine_bridge_jump_trampoline_call_origin_entry)
+LDVAR(x17, tine_bridge_jump_trampoline_call_origin_entry)
 br x17
-VAR(pine_bridge_jump_trampoline_target_method)
+VAR(tine_bridge_jump_trampoline_target_method)
 .long 0
 .long 0
-VAR(pine_bridge_jump_trampoline_extras)
+VAR(tine_bridge_jump_trampoline_extras)
 .long 0
 .long 0
-VAR(pine_bridge_jump_trampoline_bridge_method)
+VAR(tine_bridge_jump_trampoline_bridge_method)
 .long 0
 .long 0
-VAR(pine_bridge_jump_trampoline_bridge_entry)
+VAR(tine_bridge_jump_trampoline_bridge_entry)
 .long 0
 .long 0
-VAR(pine_bridge_jump_trampoline_call_origin_entry)
+VAR(tine_bridge_jump_trampoline_call_origin_entry)
 .long 0
 .long 0
 
-FUNCTION(pine_method_jump_trampoline)
-LDVAR(x0, pine_method_jump_trampoline_dest_method)
-LDVAR(x17, pine_method_jump_trampoline_dest_entry)
+FUNCTION(tine_method_jump_trampoline)
+LDVAR(x0, tine_method_jump_trampoline_dest_method)
+LDVAR(x17, tine_method_jump_trampoline_dest_entry)
 br x17
-VAR(pine_method_jump_trampoline_dest_method)
+VAR(tine_method_jump_trampoline_dest_method)
 .long 0
 .long 0
-VAR(pine_method_jump_trampoline_dest_entry)
+VAR(tine_method_jump_trampoline_dest_entry)
 .long 0
 .long 0
 
-FUNCTION(pine_call_origin_trampoline)
-LDVAR(x0, pine_call_origin_trampoline_origin_method)
-LDVAR(x17, pine_call_origin_trampoline_origin_code_entry)
+FUNCTION(tine_call_origin_trampoline)
+LDVAR(x0, tine_call_origin_trampoline_origin_method)
+LDVAR(x17, tine_call_origin_trampoline_origin_code_entry)
 br x17
-VAR(pine_call_origin_trampoline_origin_method)
+VAR(tine_call_origin_trampoline_origin_method)
 .long 0
 .long 0
-VAR(pine_call_origin_trampoline_origin_code_entry)
+VAR(tine_call_origin_trampoline_origin_code_entry)
 .long 0
 .long 0
 
-FUNCTION(pine_backup_trampoline)
-LDVAR(x0, pine_backup_trampoline_origin_method)
-VAR(pine_backup_trampoline_override_space)
+FUNCTION(tine_backup_trampoline)
+LDVAR(x0, tine_backup_trampoline_origin_method)
+VAR(tine_backup_trampoline_override_space)
 .long 0 // 4 bytes (will be overwritten)
 .long 0 // 4 bytes (will be overwritten)
 .long 0 // 4 bytes (will be overwritten)
 .long 0 // 4 bytes (will be overwritten)
 nop // 4 bytes, may be overwritten for anti checks
 nop // 4 bytes, may be overwritten for anti checks
-LDVAR(x17, pine_backup_trampoline_remaining_code_entry)
+LDVAR(x17, tine_backup_trampoline_remaining_code_entry)
 br x17
-VAR(pine_backup_trampoline_origin_method)
+VAR(tine_backup_trampoline_origin_method)
 .long 0
 .long 0
-VAR(pine_backup_trampoline_remaining_code_entry)
+VAR(tine_backup_trampoline_remaining_code_entry)
 .long 0
 .long 0
 
-FUNCTION(pine_trampolines_end)
+FUNCTION(tine_trampolines_end)
 // End tag used for calculate size only

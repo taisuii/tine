@@ -4,7 +4,7 @@
 
 #include "arm32.h"
 
-using namespace pine;
+using namespace tine;
 
 void Arm32TrampolineInstaller::InitTrampolines() {
     TrampolineInstaller::InitTrampolines();

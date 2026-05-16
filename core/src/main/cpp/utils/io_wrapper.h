@@ -11,7 +11,7 @@
 #include "macros.h"
 #include "log.h"
 
-namespace pine {
+namespace tine {
     static bool CanRetry(int error) {
         return error == EINTR || error == EIO;
     }

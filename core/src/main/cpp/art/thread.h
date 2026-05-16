@@ -23,7 +23,7 @@
 #error unsupported architecture
 #endif
 
-namespace pine::art {
+namespace tine::art {
     class Thread final {
     public:
         static void Init(const ElfImage* handle);

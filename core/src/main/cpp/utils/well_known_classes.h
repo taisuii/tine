@@ -10,7 +10,7 @@
 #include "macros.h"
 #include "log.h"
 
-namespace pine {
+namespace tine {
     class WellKnownClasses final {
     public:
         static void Init(JNIEnv* env);

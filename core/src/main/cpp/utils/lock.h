@@ -7,7 +7,7 @@
 
 #include "macros.h"
 
-namespace pine {
+namespace tine {
     class ScopedLock {
     public:
         inline ScopedLock(std::mutex& mutex) : mLock(mutex)  { mLock.lock(); }

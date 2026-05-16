@@ -8,7 +8,7 @@
 #include <cstdint>
 #include "../trampoline_installer.h"
 
-namespace pine {
+namespace tine {
     class Arm64TrampolineInstaller final : public TrampolineInstaller {
     public:
         Arm64TrampolineInstaller() : TrampolineInstaller(8) {

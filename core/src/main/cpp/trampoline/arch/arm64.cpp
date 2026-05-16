@@ -4,46 +4,46 @@
 
 #include "arm64.h"
 
-using namespace pine;
+using namespace tine;
 
 void Arm64TrampolineInstaller::InitTrampolines() {
-    kDirectJumpTrampoline = AS_VOID_PTR(pine_direct_jump_trampoline);
+    kDirectJumpTrampoline = AS_VOID_PTR(tine_direct_jump_trampoline);
     kDirectJumpTrampolineEntryOffset = DirectJumpTrampolineOffset(
-            AS_VOID_PTR(pine_direct_jump_trampoline_jump_entry));
+            AS_VOID_PTR(tine_direct_jump_trampoline_jump_entry));
 
-    kBridgeJumpTrampoline = AS_VOID_PTR(pine_bridge_jump_trampoline);
+    kBridgeJumpTrampoline = AS_VOID_PTR(tine_bridge_jump_trampoline);
     kBridgeJumpTrampolineTargetMethodOffset = BridgeJumpTrampolineOffset(
-            AS_VOID_PTR(pine_bridge_jump_trampoline_target_method));
+            AS_VOID_PTR(tine_bridge_jump_trampoline_target_method));
     kBridgeJumpTrampolineExtrasOffset = BridgeJumpTrampolineOffset(
-            AS_VOID_PTR(pine_bridge_jump_trampoline_extras));
+            AS_VOID_PTR(tine_bridge_jump_trampoline_extras));
     kBridgeJumpTrampolineBridgeMethodOffset = BridgeJumpTrampolineOffset(
-            AS_VOID_PTR(pine_bridge_jump_trampoline_bridge_method));
+            AS_VOID_PTR(tine_bridge_jump_trampoline_bridge_method));
     kBridgeJumpTrampolineBridgeEntryOffset = BridgeJumpTrampolineOffset(
-            AS_VOID_PTR(pine_bridge_jump_trampoline_bridge_entry));
+            AS_VOID_PTR(tine_bridge_jump_trampoline_bridge_entry));
     kBridgeJumpTrampolineOriginCodeEntryOffset = BridgeJumpTrampolineOffset(
-            AS_VOID_PTR(pine_bridge_jump_trampoline_call_origin_entry));
+            AS_VOID_PTR(tine_bridge_jump_trampoline_call_origin_entry));
 
-    kMethodJumpTrampoline = AS_VOID_PTR(pine_method_jump_trampoline);
+    kMethodJumpTrampoline = AS_VOID_PTR(tine_method_jump_trampoline);
     kMethodJumpTrampolineDestMethodOffset = MethodJumpTrampolineOffset(
-            AS_VOID_PTR(pine_method_jump_trampoline_dest_method));
+            AS_VOID_PTR(tine_method_jump_trampoline_dest_method));
     kMethodJumpTrampolineDestEntryOffset = MethodJumpTrampolineOffset(
-            AS_VOID_PTR(pine_method_jump_trampoline_dest_entry));
+            AS_VOID_PTR(tine_method_jump_trampoline_dest_entry));
 
-    kCallOriginTrampoline = AS_VOID_PTR(pine_call_origin_trampoline);
+    kCallOriginTrampoline = AS_VOID_PTR(tine_call_origin_trampoline);
     kCallOriginTrampolineOriginMethodOffset = CallOriginTrampolineOffset(
-            AS_VOID_PTR(pine_call_origin_trampoline_origin_method));
+            AS_VOID_PTR(tine_call_origin_trampoline_origin_method));
     kCallOriginTrampolineOriginalEntryOffset = CallOriginTrampolineOffset(
-            AS_VOID_PTR(pine_call_origin_trampoline_origin_code_entry));
+            AS_VOID_PTR(tine_call_origin_trampoline_origin_code_entry));
 
-    kBackupTrampoline = AS_VOID_PTR(pine_backup_trampoline);
+    kBackupTrampoline = AS_VOID_PTR(tine_backup_trampoline);
     kBackupTrampolineOriginMethodOffset = BackupTrampolineOffset(
-            AS_VOID_PTR(pine_backup_trampoline_origin_method));
+            AS_VOID_PTR(tine_backup_trampoline_origin_method));
     kBackupTrampolineOverrideSpaceOffset = BackupTrampolineOffset(
-            AS_VOID_PTR(pine_backup_trampoline_override_space));
+            AS_VOID_PTR(tine_backup_trampoline_override_space));
     kBackupTrampolineRemainingCodeEntryOffset = BackupTrampolineOffset(
-            AS_VOID_PTR(pine_backup_trampoline_remaining_code_entry));
+            AS_VOID_PTR(tine_backup_trampoline_remaining_code_entry));
 
-    kTrampolinesEnd = AS_VOID_PTR(pine_trampolines_end);
+    kTrampolinesEnd = AS_VOID_PTR(tine_trampolines_end);
 
     kDirectJumpTrampolineSize = 16;
 }

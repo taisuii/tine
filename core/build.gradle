@@ -5,7 +5,7 @@ apply plugin: 'signing'
 android {
     compileSdk rootProject.ext.compileSdk
     ndkVersion rootProject.ext.ndkVersion
-    namespace "top.canyie.pine"
+    namespace "com.android.tine"
     defaultConfig {
         minSdkVersion rootProject.ext.minSdk
         targetSdkVersion rootProject.ext.targetSdk
@@ -19,7 +19,7 @@ android {
             cmake {
                 arguments '-DANDROID_STL=none' // built-in libcxx introduced exception, so use our own instead
                 abiFilters 'armeabi-v7a', 'arm64-v8a'
-                targets 'pine'
+                targets 'tine'
             }
         }
     }
@@ -74,7 +74,7 @@ publishing {
             }
             pom {
                 name = rootProject.repoName
-                description = 'pine hook core library'
+                description = 'tine hook core library'
                 url = rootProject.website
                 licenses rootProject.licenses
                 developers rootProject.developers

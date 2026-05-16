@@ -3,7 +3,7 @@
 //
 #include "scoped_memory_access_protection.h"
 
-using namespace pine;
+using namespace tine;
 
 #if defined(__aarch64__) || defined(__arm__)
 

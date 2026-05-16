@@ -4,7 +4,7 @@ apply plugin: 'signing'
 
 android {
     compileSdk rootProject.ext.compileSdk
-    namespace "top.canyie.pine.xposed"
+    namespace "com.android.tine.module"
     defaultConfig {
         minSdkVersion rootProject.ext.minSdk
         targetSdkVersion rootProject.ext.targetSdk
@@ -60,7 +60,7 @@ publishing {
             }
             pom {
                 name = rootProject.repoName
-                description = 'pine hook xposed compat'
+                description = 'tine hook xposed compat'
                 url = rootProject.website
                 licenses rootProject.licenses
                 developers rootProject.developers

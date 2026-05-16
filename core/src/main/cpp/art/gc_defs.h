@@ -5,7 +5,7 @@
 #ifndef PINE_GC_DEFS_H
 #define PINE_GC_DEFS_H
 
-namespace pine::art {
+namespace tine::art {
     class GCCriticalSection {
     private:
         [[maybe_unused]] void* self_;

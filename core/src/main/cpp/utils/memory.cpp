@@ -8,9 +8,9 @@
 #include <bits/sysconf.h>
 #include "memory.h"
 #include "lock.h"
-#include "../pine_config.h"
+#include "../tine_config.h"
 
-using namespace pine;
+using namespace tine;
 
 const size_t Memory::page_size = static_cast<const size_t>(sysconf(_SC_PAGESIZE));
 
@@ -42,11 +42,11 @@ void* Memory::AllocUnprotected(size_t size) {
         LOGE("Unable to allocate executable memory: %s (%d)", strerror(errno), errno);
         return nullptr;
     }
-    if (PineConfig::debug)
+    if (TineConfig::debug)
         LOGD("Mapped new memory %p (size %u)", mapped, page_size);
 
-    if (!PineConfig::anti_checks)
-        prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, mapped, size, "pine codes");
+    if (!TineConfig::anti_checks)
+        prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, mapped, size, "jit-cache");
 
     memset(mapped, 0, page_size);
     address = reinterpret_cast<uintptr_t>(mapped);

@@ -3,9 +3,9 @@ apply plugin: 'com.android.application'
 android {
     compileSdk rootProject.ext.compileSdk
     ndkVersion rootProject.ext.ndkVersion
-    namespace "top.canyie.pine.examples"
+    namespace "com.android.tine.examples"
     defaultConfig {
-        applicationId "top.canyie.pine.examples"
+        applicationId "com.android.tine.examples"
         minSdkVersion rootProject.ext.minSdk
         targetSdkVersion rootProject.ext.targetSdk
         versionCode 1

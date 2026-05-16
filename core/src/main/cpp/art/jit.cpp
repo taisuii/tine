@@ -5,7 +5,7 @@
 #include "jit.h"
 #include "../android.h"
 
-using namespace pine::art;
+using namespace tine::art;
 
 JitCompiler* Jit::self_compiler = nullptr;
 

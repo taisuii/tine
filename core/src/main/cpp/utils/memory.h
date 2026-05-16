@@ -11,7 +11,7 @@
 #include "macros.h"
 #include "log.h"
 
-namespace pine {
+namespace tine {
     class Memory {
     public:
         static void* AllocUnprotected(size_t size);

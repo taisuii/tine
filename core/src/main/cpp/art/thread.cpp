@@ -4,7 +4,7 @@
 
 #include "thread.h"
 
-using namespace pine::art;
+using namespace tine::art;
 
 Thread* (*Thread::current)() = nullptr;
 

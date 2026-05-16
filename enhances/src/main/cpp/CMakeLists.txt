@@ -29,7 +29,7 @@ include_directories(
         $<TARGET_PROPERTY:dobby,INCLUDE_DIRECTORIES>
 )
 
-add_library(pine-enhances SHARED enhances.cpp)
+add_library(tine-enhances SHARED enhances.cpp)
 
 find_library(log-lib log)
 
@@ -37,6 +37,6 @@ find_package(cxx REQUIRED CONFIG)
 
 target_link_libraries(dobby cxx::cxx)
 
-target_link_libraries(pine-enhances ${log-lib} cxx::cxx dobby)
+target_link_libraries(tine-enhances ${log-lib} cxx::cxx dobby)
 
 ENABLE_LANGUAGE(ASM)

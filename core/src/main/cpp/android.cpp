@@ -13,7 +13,7 @@
 #include "trampoline/trampoline_installer.h"
 #include "utils/memory.h"
 
-using namespace pine;
+using namespace tine;
 
 int Android::version = -1;
 JavaVM* Android::jvm_ = nullptr;
@@ -178,7 +178,7 @@ bool Android::DisableProfileSaver() {
 
         // MIUI added, size of the original function is smaller than size of a direct jump trampoline
         // and cannot be hooked, else we will write overflow and corrupt the next function
-        // https://github.com/canyie/pine/issues/18
+        // https://github.com/canyie/Tine/issues/18
         process_profiling_info = handle.GetSymbolAddress("_ZN3art12ProfileSaver20ProcessProfilingInfoEbPtb", false);
         if (LIKELY(!process_profiling_info)) {
             const char* symbol = version < kO ? "_ZN3art12ProfileSaver20ProcessProfilingInfoEPt"

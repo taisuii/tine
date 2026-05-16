@@ -8,7 +8,7 @@
 #include "trampolines.h"
 #include "../trampoline_installer.h"
 
-namespace pine {
+namespace tine {
     class Thumb2TrampolineInstaller final : public TrampolineInstaller {
     public:
         Thumb2TrampolineInstaller() : TrampolineInstaller(4) {

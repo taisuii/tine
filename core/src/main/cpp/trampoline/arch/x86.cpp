@@ -6,7 +6,7 @@
 #include "../../utils/memory.h"
 #include "../../utils/scoped_memory_access_protection.h"
 
-using namespace pine;
+using namespace tine;
 
 // FIXME: app crash when returning from the hooked method
 static const unsigned char bridge_jump_trampoline[] = {

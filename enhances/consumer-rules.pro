@@ -1,4 +1,4 @@
-# Pine Enhances
--keep class top.canyie.pine.enhances.PineEnhances {
+# Tine Enhances
+-keep class com.android.tine.enhances.TineEnhances {
     private static void onClassInit(long);
 }

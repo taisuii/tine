@@ -12,7 +12,7 @@
 #include "../utils/member.h"
 #include "../utils/elf_image.h"
 
-namespace pine::art {
+namespace tine::art {
     class JitCompiler final {
     public:
         std::unique_ptr<void> compiler_options_;

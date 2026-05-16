@@ -8,7 +8,7 @@
 #include <jni.h>
 #include "macros.h"
 
-namespace pine {
+namespace tine {
     class JNIHelper {
     public:
         static bool SetStaticBooleanField(JNIEnv* env, jclass c, const char* name, bool value) {

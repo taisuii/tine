@@ -9,7 +9,7 @@
 #include "arch/arch.h"
 #include "../utils/macros.h"
 
-namespace pine {
+namespace tine {
     /** Hook extras data. DO NOT modify the member layout of this class because it is hard-coded in trampolines. */
     class PACKED(4) Extras final {
     public:
@@ -50,7 +50,7 @@ namespace pine {
         /** Floating point registers
          *  Note: In fact, we don’t need to save them,
          *  but an unknown error will occur when receiving directly in the bridge method
-         *  See https://github.com/canyie/pine/issues/9
+         *  See https://github.com/canyie/Tine/issues/9
          */
         jdouble fps[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 #elif defined(__arm__)
