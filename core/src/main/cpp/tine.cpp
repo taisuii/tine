@@ -542,6 +542,19 @@ jlong Tine_currentArtThread0(JNIEnv* env, jclass) {
     return reinterpret_cast<jlong>(art::Thread::Current(env));
 }
 
+// Open a window in which the moving GC will not relocate objects, so that the raw declaring_class
+// reference held by the backup ArtMethod stays valid while we sync + invoke it. Returns an opaque
+// cookie to be passed to Tine_endCallBackup. If moving-GC disabling is unavailable, the returned
+// guard is inert and the caller transparently falls back to lazy declaring_class sync.
+jlong Tine_beginCallBackup(JNIEnv* env, jclass) {
+    void* self = art::Thread::Current(env);
+    return reinterpret_cast<jlong>(new tine::ScopedDisableMovingGc(self));
+}
+
+void Tine_endCallBackup(JNIEnv*, jclass, jlong cookie) {
+    delete reinterpret_cast<tine::ScopedDisableMovingGc*>(cookie);
+}
+
 void Tine_makeClassesVisiblyInitialized(JNIEnv*, jclass, jlong thread) {
     Android::MakeInitializedClassesVisiblyInitialized(reinterpret_cast<void*>(thread), true);
 }
@@ -601,6 +614,8 @@ static const JNINativeMethod gMethods[] = {
         {"setDebuggable0", "(Z)V", (void*) Tine_setDebuggable},
         {"disableHiddenApiPolicy0", "(ZZ)V", (void*) Tine_disableHiddenApiPolicy0},
         {"currentArtThread0", "()J", (void*) Tine_currentArtThread0},
+        {"beginCallBackup", "()J", (void*) Tine_beginCallBackup},
+        {"endCallBackup", "(J)V", (void*) Tine_endCallBackup},
         {"makeClassesVisiblyInitialized", "(J)V", (void*) Tine_makeClassesVisiblyInitialized},
         {"cloneExtras", "(J)J", (void*) Tine_cloneExtras},
 #ifdef __aarch64__

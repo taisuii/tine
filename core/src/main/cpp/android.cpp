@@ -32,6 +32,10 @@ void (*Android::make_visibly_initialized_)(void*, void*, bool) = nullptr;
 void* Android::jit_code_cache_ = nullptr;
 void (*Android::move_obsolete_method_)(void*, void*, void*) = nullptr;
 
+void* Android::heap_ = nullptr;
+void (*Android::increment_disable_moving_gc_)(void*, void*) = nullptr;
+void (*Android::decrement_disable_moving_gc_)(void*, void*) = nullptr;
+
 void Android::Init(JNIEnv* env, int sdk_version, bool disable_hiddenapi_policy, bool disable_hiddenapi_policy_for_platform) {
     Android::version = sdk_version;
     if (UNLIKELY(env->GetJavaVM(&jvm_) != JNI_OK)) {
@@ -106,9 +110,61 @@ void Android::Init(JNIEnv* env, int sdk_version, bool disable_hiddenapi_policy, 
         }
 
         InitMembersFromRuntime(jvm_, &art_lib_handle);
+        InitDisableMovingGc(&art_lib_handle);
     }
 
     WellKnownClasses::Init(env);
+}
+
+void Android::InitDisableMovingGc(const ElfImage* handle) {
+    // Android Kitkat and below have no moving GC (all objects are immovable), so the backup
+    // declaring_class can never go stale. Nothing to do.
+    if (version < kL) return;
+
+    increment_disable_moving_gc_ = reinterpret_cast<void (*)(void*, void*)>(handle->GetSymbolAddress(
+            "_ZN3art2gc4Heap22IncrementDisableMovingGCEPNS_6ThreadE", false));
+    decrement_disable_moving_gc_ = reinterpret_cast<void (*)(void*, void*)>(handle->GetSymbolAddress(
+            "_ZN3art2gc4Heap22DecrementDisableMovingGCEPNS_6ThreadE", false));
+    if (UNLIKELY(!increment_disable_moving_gc_ || !decrement_disable_moving_gc_)) {
+        LOGW("Heap::{Increment,Decrement}DisableMovingGC not found; "
+             "backup calls fall back to lazy declaring_class sync.");
+        increment_disable_moving_gc_ = nullptr;
+        decrement_disable_moving_gc_ = nullptr;
+        return;
+    }
+
+    // Obtain art::gc::Heap* from the Runtime. We deliberately do NOT guess the offset of the
+    // heap_ member inside Runtime: it is far from any anchor we can validate and varies across
+    // ART versions, and dereferencing a wrong pointer in IncrementDisableMovingGC would be worse
+    // than the bug we are fixing. Instead we use Runtime::GetHeap() (returns heap_.get()). If it
+    // is inlined away / not exported on this ROM, we leave heap_ null and degrade safely.
+    void** instance_ptr = static_cast<void**>(handle->GetSymbolAddress(
+            "_ZN3art7Runtime9instance_E", false));
+    void* runtime = instance_ptr ? *instance_ptr : nullptr;
+    if (UNLIKELY(!runtime)) {
+        LOGW("Runtime::instance_ unavailable; cannot disable moving GC for backup calls.");
+        increment_disable_moving_gc_ = nullptr;
+        decrement_disable_moving_gc_ = nullptr;
+        return;
+    }
+
+    auto get_heap = reinterpret_cast<void* (*)(void*)>(handle->GetSymbolAddress(
+            "_ZNK3art7Runtime7GetHeapEv", false)); // gc::Heap* Runtime::GetHeap() const
+    if (UNLIKELY(!get_heap)) {
+        get_heap = reinterpret_cast<void* (*)(void*)>(handle->GetSymbolAddress(
+                "_ZN3art7Runtime7GetHeapEv", false)); // non-const mangling fallback
+    }
+    if (LIKELY(get_heap)) {
+        heap_ = get_heap(runtime);
+    }
+
+    if (UNLIKELY(!heap_)) {
+        LOGW("Could not resolve art::gc::Heap*; backup calls fall back to lazy declaring_class sync.");
+        increment_disable_moving_gc_ = nullptr;
+        decrement_disable_moving_gc_ = nullptr;
+    } else {
+        LOGI("Moving-GC guard for backup calls enabled (heap=%p).", heap_);
+    }
 }
 
 static int FakeHandleHiddenApi() {
