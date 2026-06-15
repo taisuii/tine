@@ -54,7 +54,40 @@ public class AutomatedTest {
 
         runTests(4);
 
-        // TODO Check if we can properly handle GC when hooked methods are executing
-        //   Currently it crashes on argument parsing / backup method invoking
+        // Step 5: Check if we can properly handle a moving GC while hooked methods are executing.
+        // Previously this crashed on backup method invoking: a moving GC could relocate the
+        // declaring Class while the backup method (whose declaring_class is a raw reference) was
+        // being invoked, leaving a dangling pointer. With the moving-GC guard around backup calls
+        // (Tine.beginCallBackup/endCallBackup) this must run without crashing.
+        runTestsUnderGcPressure(5);
+    }
+
+    private void runTestsUnderGcPressure(int step) {
+        final java.util.concurrent.atomic.AtomicBoolean stop = new java.util.concurrent.atomic.AtomicBoolean(false);
+        Thread gcStress = new Thread(() -> {
+            while (!stop.get()) {
+                // Allocate garbage and force GC to maximize the chance of relocating Class objects
+                // while the main thread is inside a backup method invocation.
+                byte[][] garbage = new byte[256][];
+                for (int i = 0; i < garbage.length; i++) garbage[i] = new byte[4096];
+                Runtime.getRuntime().gc();
+            }
+        }, "tine-gc-stress");
+        gcStress.setDaemon(true);
+        gcStress.start();
+
+        try {
+            // Repeatedly exercise the hook -> invokeOriginalMethod -> backup-call paths under pressure.
+            for (int i = 0; i < 50; i++) {
+                runTests(step);
+            }
+        } finally {
+            stop.set(true);
+            try {
+                gcStress.join(2000);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

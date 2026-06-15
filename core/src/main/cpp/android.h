@@ -74,6 +74,26 @@ namespace tine {
             }
         }
 
+        // Whether we can temporarily disable the *moving* garbage collector. Used to make sure
+        // the declaring class of a backup method (a malloc'd ArtMethod invisible to GC) is not
+        // relocated while we are about to invoke it. Non-moving GC still runs, so this cannot
+        // cause allocation deadlocks (this is the same primitive used by GetPrimitiveArrayCritical).
+        static bool CanDisableMovingGc() {
+            return heap_ && increment_disable_moving_gc_ && decrement_disable_moving_gc_;
+        }
+
+        static void IncrementDisableMovingGc(void* self) {
+            if (LIKELY(CanDisableMovingGc())) {
+                increment_disable_moving_gc_(heap_, self);
+            }
+        }
+
+        static void DecrementDisableMovingGc(void* self) {
+            if (LIKELY(CanDisableMovingGc())) {
+                decrement_disable_moving_gc_(heap_, self);
+            }
+        }
+
         static void SuspendVM(void* cookie, void* self, const char* cause) {
             if (suspend_vm) {
                 suspend_vm();
@@ -113,6 +133,7 @@ namespace tine {
         static void InitMembersFromRuntime(JavaVM* jvm, const ElfImage* handle);
         static void InitClassLinker(void* runtime, size_t java_vm_offset, const ElfImage* handle, bool has_small_irt);
         static void InitJitCodeCache(void* runtime, size_t java_vm_offset, const ElfImage* handle);
+        static void InitDisableMovingGc(const ElfImage* handle);
 
         static std::vector<size_t> OffsetOfJavaVm(bool has_small_irt) {
             std::vector<size_t> offsets;
@@ -146,6 +167,13 @@ namespace tine {
 
         static void* jit_code_cache_;
         static void (*move_obsolete_method_)(void*, void*, void*);
+
+        // art::gc::Heap* and art::gc::Heap::{Increment,Decrement}DisableMovingGC(art::Thread*).
+        // All null when unavailable -- the feature then degrades to the previous lazy
+        // declaring_class sync behavior (no regression).
+        static void* heap_;
+        static void (*increment_disable_moving_gc_)(void*, void*);
+        static void (*decrement_disable_moving_gc_)(void*, void*);
         DISALLOW_IMPLICIT_CONSTRUCTORS(Android);
     };
 
@@ -161,6 +189,35 @@ namespace tine {
 
     private:
         DISALLOW_COPY_AND_ASSIGN(ScopedSuspendVM);
+    };
+
+    // Temporarily disables the moving garbage collector for the lifetime of this object.
+    // While active, the GC will not relocate objects (e.g. mirror::Class), so the raw
+    // declaring_class reference held by a malloc'd backup ArtMethod stays valid. Non-moving
+    // GC still runs, so this is safe to hold across arbitrary managed code.
+    // If the underlying ART symbols are unavailable, this is a no-op (active() == false) and
+    // callers fall back to the previous lazy-sync behavior.
+    class ScopedDisableMovingGc {
+    public:
+        explicit ScopedDisableMovingGc(void* self)
+                : self_(self), active_(Android::CanDisableMovingGc()) {
+            if (LIKELY(active_)) {
+                Android::IncrementDisableMovingGc(self_);
+            }
+        }
+
+        ~ScopedDisableMovingGc() {
+            if (LIKELY(active_)) {
+                Android::DecrementDisableMovingGc(self_);
+            }
+        }
+
+        bool active() const { return active_; }
+
+    private:
+        void* self_;
+        bool active_;
+        DISALLOW_COPY_AND_ASSIGN(ScopedDisableMovingGc);
     };
 }
 

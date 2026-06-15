@@ -490,19 +490,29 @@ public final class Tine {
     }
 
     static Object callBackupMethod(HookRecord hookRecord, Object thisObject, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        // java.lang.Class object is movable and may cause crash when invoke backup method,
-        // native entry of JNI method may be changed by RegisterNatives and UnregisterNatives,
-        // so we need to update them when invoke backup method.
+        // The backup ArtMethod is a malloc'd object invisible to the GC, and its declaring_class is
+        // a raw (compressed) reference. When a moving GC relocates the declaring Class, the runtime
+        // updates the *real* method but not our detached backup, leaving a dangling pointer. The old
+        // code synced declaring_class then invoked the backup, but a moving GC between the two (the
+        // Method.invoke path is full of safepoints) would re-stale it and crash the backup call.
+        //
+        // We close that window deterministically: disable the *moving* GC for the duration of the
+        // call. beginCallBackup() also waits for any in-progress moving GC to finish, so the sync
+        // below copies the final address and the class cannot move again until the call returns.
+        // Non-moving GC still runs, so this cannot cause allocation deadlocks. When the underlying
+        // ART primitive is unavailable, the guard is inert and syncMethodInfo() alone provides the
+        // previous (lazy) behavior -- no regression.
         Member origin = hookRecord.target;
         Method backup = hookRecord.backup;
-        Class<?> declaring = origin.getDeclaringClass();
-        syncMethodInfo(origin, backup, hookRecord.skipUpdateDeclaringClass);
-        // FIXME: GC happens here (you can add Runtime.getRuntime().gc() to test) will crash backup calling
-        Object result = backup.invoke(thisObject, args);
-        // Explicit use declaring_class object to ensure it has reference on stack
-        // and avoid being moved by gc. (invalid for now)
-        declaring.getClass();
-        return result;
+        long gcGuard = beginCallBackup();
+        try {
+            // native entry of a JNI method may be changed by RegisterNatives/UnregisterNatives, and
+            // (when the guard is inert) declaring_class may still need a best-effort resync.
+            syncMethodInfo(origin, backup, hookRecord.skipUpdateDeclaringClass);
+            return backup.invoke(thisObject, args);
+        } finally {
+            endCallBackup(gcGuard);
+        }
     }
 
     /**
@@ -841,6 +851,13 @@ public final class Tine {
     public static native void getArgsX86(int extras, int[] out, int ebx);
 
     private static native void syncMethodInfo(Member origin, Method backup, boolean skipDeclaringClass);
+
+    // Disable the moving GC for the duration of a backup-method call so the backup's declaring_class
+    // cannot be relocated mid-call. Returns an opaque cookie for endCallBackup(). Inert (no-op) when
+    // the underlying ART primitive is unavailable.
+    private static native long beginCallBackup();
+
+    private static native void endCallBackup(long cookie);
 
     public static native long currentArtThread0();
 
