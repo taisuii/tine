@@ -153,6 +153,13 @@ In the example, we recommend you to hook `methodLocked` instead of `method`.
 [QQ Group：949888394](https://shang.qq.com/wpa/qunwpa?idkey=25549719b948d2aaeb9e579955e39d71768111844b370fcb824d43b9b20e1c04)
 [Telegram Group: @DreamlandFramework](https://t.me/DreamlandFramework)
 
+## 关注公众号
+<div align="center">
+  <img src="https://blog-img-1393828675.cos.ap-shanghai.myqcloud.com/rreversewechat/wechatsearch.png" alt="关注公众号" width="320" />
+  <br/>
+  <sub>扫码或微信搜索关注公众号，获取更多 Android 逆向 / Hook 相关内容与更新</sub>
+</div>
+
 ## Credits
 - [SandHook](https://github.com/ganyao114/SandHook)
 - [Epic](https://github.com/tiann/epic)
