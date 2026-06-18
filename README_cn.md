@@ -1,193 +1,198 @@
-# Tine [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE_CN)
-## 简介
-Tine 是一个在虚拟机层面、以Java方法为粒度的运行时动态 hook 框架，它可以拦截本进程内几乎所有的 java 方法调用。
+# Tine
 
-目前它支持Android 4.4（只支持 ART）~ **15 Beta 4** 且使用 thumb-2/arm64 指令集的设备。
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE_CN)
+[![Android](https://img.shields.io/badge/Android-4.4%20~%2015-3DDC84.svg)](#支持的版本)
 
-关于它的实现原理，可以参考[本文](https://canyie.github.io/2020/04/27/dynamic-hooking-framework-on-art/)。
+[English](README.md)
 
-注：在 Android 6.0 & 32 位架构上，参数解析可能错误；另外在 Android 9.0 及以上，Tine 会关闭系统的隐藏API限制策略。
+**Tine** 是基于 [Pine](https://github.com/canyie/pine) 二次开发的 ART 运行时 Java 方法 Hook 框架。它运行在目标进程内部，可以拦截当前进程几乎所有的 Java 方法调用，无需 root、无需改包。
 
-~~此项目的名称，Tine，表示以喹硫平、氯氮平为代表的一类抗精神病药物。它同样是 Tine Is Not Epic 的首字母缩写。~~
+本 fork **不是简单的换皮重传**，它实质性地做了两件事：
 
-## 使用
-[![Download](https://img.shields.io/maven-central/v/com.android.tine/core.svg)](https://repo1.maven.org/maven2/com/android/tine/core/)
+1. **降低指纹** —— 把框架从 Pine 改名为 Tine，使最容易被静态扫描命中的特征（Java 包名、公开类名、随包发布的 `.so`/`.aar` 名称）不再直接暴露为 "Pine"。
+2. **修复一个真实崩溃** —— 解决了「调用被 Hook 方法原实现时，移动 GC 搬动 backup 方法导致 `SIGSEGV`」的老问题。
 
-### 基础使用
-在 build.gradle 中添加如下依赖：
+> 其余部分（ART 内部处理、trampoline、Xposed 桥接）均继承自上游 Pine，全部功劳归 [canyie](https://github.com/canyie)，详见[致谢](#致谢)。
+
+---
+
+## 📢 关注公众号
+
+<div align="center">
+  <img src="https://blog-img-1393828675.cos.ap-shanghai.myqcloud.com/rreversewechat/wechatsearch.png" alt="关注公众号" width="340" />
+  <br/>
+  <sub>微信扫码或搜索关注公众号，获取更多 Android 逆向 / Hook / 反检测 相关内容与本项目更新</sub>
+</div>
+
+---
+
+## 本 fork 相比上游 Pine 改了什么
+
+| 维度 | 上游 Pine | Tine（本 fork） |
+|------|-----------|-----------------|
+| Java 包名 | `top.canyie.pine` | `com.android.tine` |
+| Native 库 | `libpine.so` | `libtine.so` |
+| 公开入口类 | `Pine`、`PineConfig` … | `Tine`、`TineConfig` … |
+| Maven 坐标 | `top.canyie.pine:*` | `com.android.tine:*` |
+| 移动 GC backup 崩溃 | 存在（源码里 `// FIXME: GC happens here ... will crash backup calling`） | **已修复**（见下） |
+
+### 🛡️ 修复：移动 GC 导致 backup 调用 `SIGSEGV`
+
+调用被 Hook 方法的原实现（`invokeOriginalMethod` / `callBackupMethod`）时，如果 Android 的**移动型 GC**（8–12 的 CC、13+ 的 CMC）在错误时机搬动了 backup 方法的 `declaring_class`，会触发 native `SIGSEGV`。原因是 backup 这个 `ArtMethod` 是 `malloc` 出来的、GC 不可见，堆压缩后它的 `declaring_class` 变成野指针。
+
+Tine 的修复：在一次 backup 调用期间，只禁用**移动型 GC**（即 `GetPrimitiveArrayCritical` 内部所用的原语），非移动 GC 照常运行；当相关 ART 符号无法解析时自动退回原有行为，**零回归**。
+
+📄 完整说明：[docs/moving-gc-backup-fix.md](docs/moving-gc-backup-fix.md)
+
+> ⚠️ 如实说明：目前的指纹消减覆盖的是 **Java/API 层与发布产物**（包名、类名、`libtine.so`、`*.aar`）。C++ 内部命名空间/符号仍残留部分 `pine` 字样，更彻底的清理是已知的后续项。
+
+---
+
+## <a name="支持的版本"></a>支持的版本
+
+- Android **4.4（仅 ART）~ 15**，`thumb-2` / `arm64` 指令集。
+- 注意：Android 6.0 + arm32/thumb-2 上参数解析可能错误；Android 9.0+ 上 Tine 初始化时会关闭系统隐藏 API 限制策略。
+
+---
+
+## 📦 如何接入
+
+本 fork **未发布到 Maven Central**（`com.android.tine:*` 这套坐标在中央仓库并不存在），请用下面两种方式之一。
+
+### 方式 A —— 使用 Releases 里的预编译 AAR（推荐）
+
+1. 从 [Releases](https://github.com/taisuii/tine/releases) 页面下载 `core-release.aar`（需要的话再下载 `xposed-release.aar` / `enhances-release.aar`）。
+2. 放进你模块的 `libs/` 目录。
+3. 在 `build.gradle` 中引用：
+
 ```groovy
 dependencies {
-    implementation 'com.android.tine:core:<version>'
+    implementation files('libs/core-release.aar')   // AAR 已内置 libtine.so 等 native 库
+    // 可选：
+    // implementation files('libs/xposed-release.aar')
+    // implementation files('libs/enhances-release.aar')
 }
 ```
-配置一些基础信息：
-```java
-TineConfig.debug = true; // 是否debug，true会输出较详细log
-TineConfig.debuggable = BuildConfig.DEBUG; // 该应用是否可调试，建议和配置文件中的值保持一致，否则会出现问题
+
+### 方式 B —— 从源码编译
+
+环境要求：Android SDK（platform 34）、**NDK `25.2.9519653`**、**CMake `3.22.1`**、JDK 17。
+
+```bash
+# 1. 带子模块克隆（xz-embedded + dobby 是编译 native 必需的）
+git clone --recursive https://github.com/taisuii/tine.git
+cd tine
+# 如果已经普通克隆过：
+git submodule update --init --recursive
+
+# 2. 指定 SDK 路径（本仓库刻意不提交 local.properties）
+echo "sdk.dir=/你的/Android/Sdk/绝对路径" > local.properties
+
+# 3. 编译 release AAR
+./gradlew :core:assembleRelease :xposed:assembleRelease :enhances:assembleRelease
 ```
-然后就可以开始使用了。
 
-几个例子：
+产物在 `*/build/outputs/aar/` 下。
 
-例子1：监控 Activity onCreate（注：仅做测试使用，如果你真的有这个需求更建议使用 `registerActivityLifecycleCallbacks()` 等接口）
+---
+
+## 🚀 使用
+
+```java
+// 尽早配置一次（最好在其他线程启动之前）
+TineConfig.debug = true;                    // 输出更详细的日志
+TineConfig.debuggable = BuildConfig.DEBUG;  // 与应用的 debuggable 保持一致，否则可能出问题
+```
+
+### Hook 一个方法（前/后）
+
 ```java
 Tine.hook(Activity.class.getDeclaredMethod("onCreate", Bundle.class), new MethodHook() {
     @Override public void beforeCall(Tine.CallFrame callFrame) {
-        Log.i(TAG, "Before " + callFrame.thisObject + " onCreate()");
+        Log.i(TAG, "before " + callFrame.thisObject + ".onCreate()");
     }
-
     @Override public void afterCall(Tine.CallFrame callFrame) {
-        Log.i(TAG, "After " + callFrame.thisObject + " onCreate()");
+        Log.i(TAG, "after  " + callFrame.thisObject + ".onCreate()");
     }
 });
 ```
 
-Tine.CallFrame 就相当于 Xposed 的 MethodHookParams。
+`Tine.CallFrame` 相当于 Xposed 的 `MethodHookParam`：可读写 `args`、读取 `thisObject`、设置返回值，或用 `callFrame.invokeOriginalMethod()` 调用原方法。
 
-例子2：拦截所有 java 线程的创建与销毁：
+### 直接替换一个方法
+
 ```java
-final MethodHook runHook = new MethodHook() {
-    @Override public void beforeCall(Tine.CallFrame callFrame) throws Throwable {
-        Log.i(TAG, "Thread " + callFrame.thisObject + " started...");
-    }
-
-    @Override public void afterCall(Tine.CallFrame callFrame) throws Throwable {
-        Log.i(TAG, "Thread " + callFrame.thisObject + " exit...");
-    }
-};
-
-Tine.hook(Thread.class.getDeclaredMethod("start"), new MethodHook() {
-    @Override public void beforeCall(Tine.CallFrame callFrame) {
-        Tine.hook(ReflectionHelper.getMethod(callFrame.thisObject.getClass(), "run"), runHook);
-    }
-});
-```
-
-例子3：允许任何线程更改 UI （注：绝对不建议在任何 APP 中使用）：
-```java
+// 例如允许任意线程更新 UI（仅用于测试，切勿上线）
 Method checkThread = Class.forName("android.view.ViewRootImpl").getDeclaredMethod("checkThread");
 Tine.hook(checkThread, MethodReplacement.DO_NOTHING);
 ```
 
-### Xposed支持
-[![Download](https://img.shields.io/maven-central/v/com.android.tine/xposed.svg)](https://repo1.maven.org/maven2/com/android/tine/xposed/)
+### Xposed 风格 API（`com.android.tine:xposed` / `xposed-release.aar`）
 
-Tine 支持以 Xposed 风格 hook 方法和加载 Xposed 模块（注：目前不支持资源 hook 等）。
+Tine 支持以 Xposed 风格 Hook 方法并加载 Xposed 模块。**仅支持 Java 方法 Hook** —— 依赖资源 Hook、`TsSharedPreferences` 等特性的模块无法工作。
 
-添加依赖：
-```groovy
-implementation 'com.android.tine:xposed:<version>'
-```
-（注：Xposed 支持需要依赖 core）
-
-然后你可以直接以 Xposed 风格 hook 方法：
 ```java
 TsHelpers.findAndHookMethod(TextView.class, "setText",
-                CharSequence.class, TextView.BufferType.class, boolean.class, int.class,
-                new TsMethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                        Log.e(TAG, "Before TextView.setText");
-                        param.args[0] = "hooked";
-                    }
+        CharSequence.class, TextView.BufferType.class, boolean.class, int.class,
+        new TsMethodHook() {
+            @Override protected void beforeHookedMethod(MethodHookParam param) {
+                param.args[0] = "hooked";
+            }
+        });
 
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        Log.e(TAG, "After TextView.setText");
-                    }
-                });
-```
-也可以使用:
-```java
-TsBridge.hookMethod(target, callback);
-```
-
-也可以直接加载 Xposed 模块：
-```java
-// 1. load modules
+// 加载 Xposed 模块
 TineModule.loadModule(new File(modulePath));
-
-// 2. call all 'ILoadPackageHook' callback
 TineModule.onPackageLoad(packageName, processName, appInfo, isFirstApp, classLoader);
 ```
-请注意：
-1. 所有代码只会在当前进程中生效。如果你想影响其他进程，请先用自己的手段将代码注入进去。这和本项目完全无关。
-2. 使用了不支持的功能（例如 Resources hook/TsSharedPreferences）的模块不会工作。
 
-### 增强功能
-[![Download](https://img.shields.io/maven-central/v/com.android.tine/enhances.svg)](https://repo1.maven.org/maven2/com/android/tine/enhances/)
+若模块 API 会被你模块外部调用，请用 ProGuard 保留：
 
-借助 [Dobby](https://github.com/jmpews/Dobby), 你可以使用一些增强功能:
-```groovy
-implementation 'com.android.tine:enhances:<version>'
 ```
-
-- Delay hook (也称为 pending hook), hook 静态方法无需立刻初始化它所在的类，只需要加入以下代码:
-```java
-TineEnhances.enableDelayHook();
-```
-
-### ProGuard
-如果你使用 Xposed 功能，并且 Xposed 相关接口会被外部调用 (比如你调用 `TineModule.loadModule()` 加载其他模块):
-```
-# Keep Xposed APIs
 -keep class com.android.bridge.** { *; }
 -keep class android.** { *; }
 ```
 
-## 已知问题：
-- 可能不兼容部分设备/系统。
+### 增强功能（`com.android.tine:enhances` / `enhances-release.aar`）
 
-- 由于[#11](https://github.com/canyie/Tine/issues/11)，我们建议尽量 hook 并发较少的方法，举个例子：
+借助 [Dobby](https://github.com/jmpews/Dobby)。例如支持 **延迟 Hook（pending hook）** —— Hook 静态方法时无需立刻初始化其所在类：
+
+```java
+TineEnhances.enableDelayHook();
+```
+
+> 所有 Hook 只在**当前进程**内生效。想影响其他进程，请先用你自己的手段把代码注入进去，这与本库无关。
+
+---
+
+## ⚠️ 已知问题
+
+- 可能不兼容部分设备/ROM。
+- 尽量 Hook 并发较低的方法。如果必须 Hook 热点高并发方法，建议改为 Hook 其中竞争较少的内部方法：
+
 ```java
 public static void method() {
-    synchronized (sLock) {
-        methodLocked();
-    }
+    synchronized (sLock) { methodLocked(); }   // Hook methodLocked()，而不是 method()
 }
-
-private static void methodLocked() {
-    // ...
-}
+private static void methodLocked() { /* ... */ }
 ```
-在这个例子里，我们更建议 hook `methodLocked` 而非 `method`。
 
-- Tine 默认情况下会在初始化时禁用系统的隐藏 API 限制。系统有一个 bug，当一个线程更改隐藏 API 策略时另一个线程在列出一个类的所有成员时，系统内部可能会发生越界写并导致崩溃。我们没法修复系统 bug，所以我建议你在其他所有线程初始化之前就初始化我们的库以避免这个 race condition。更多信息请参阅 tiann/FreeReflection#60。
+- Tine 初始化时会关闭隐藏 API 限制。由于 ART 的一个 bug：一个线程修改该策略、另一个线程正在列举某个类的成员时，可能发生越界写并崩溃。请在其他线程启动**之前**初始化 Tine 以避免竞态（参见 [tiann/FreeReflection#60](https://github.com/tiann/FreeReflection/issues/60)）。
+- 发现问题请到 [taisuii/tine/issues](https://github.com/taisuii/tine/issues) 反馈。
 
-- 更多请参见 [issues](https://github.com/canyie/Tine/issues)。
-
-## 交流讨论
-[QQ群：949888394](https://shang.qq.com/wpa/qunwpa?idkey=25549719b948d2aaeb9e579955e39d71768111844b370fcb824d43b9b20e1c04)
-[Telegram Group: @DreamlandFramework](https://t.me/DreamlandFramework)
-
-## 关注公众号
-<div align="center">
-  <img src="https://blog-img-1393828675.cos.ap-shanghai.myqcloud.com/rreversewechat/wechatsearch.png" alt="关注公众号" width="320" />
-  <br/>
-  <sub>扫码或微信搜索关注公众号，获取更多 Android 逆向 / Hook 相关内容与更新</sub>
-</div>
+---
 
 ## 致谢
-- [SandHook](https://github.com/ganyao114/SandHook)
-- [Epic](https://github.com/tiann/epic)
-- [AndroidELF](https://github.com/ganyao114/AndroidELF)：本项目使用了的 ELF 符号搜索库
-- [FastHook](https://github.com/turing-technician/FastHook)
-- [YAHFA](https://github.com/PAGalaxyLab/YAHFA)
-- [Dobby](https://github.com/jmpews/Dobby)
-- [LSPosed](https://github.com/LSPosed/LSPosed)
-- [libcxx-prefab](https://github.com/RikkaW/libcxx-prefab)
+
+本项目完全建立在 [canyie](https://github.com/canyie) 的上游 **[Pine](https://github.com/canyie/pine)** 之上，实现原理见[这篇文章](https://canyie.github.io/2020/04/27/dynamic-hooking-framework-on-art/)。
+
+- [Pine](https://github.com/canyie/pine) —— 本 fork 所基于的上游框架
+- [SandHook](https://github.com/ganyao114/SandHook) · [Epic](https://github.com/tiann/epic) · [YAHFA](https://github.com/PAGalaxyLab/YAHFA) · [FastHook](https://github.com/turing-technician/FastHook)
+- [AndroidELF](https://github.com/ganyao114/AndroidELF) —— ELF 符号搜索
+- [Dobby](https://github.com/jmpews/Dobby) · [LSPosed](https://github.com/LSPosed/LSPosed) · [libcxx-prefab](https://github.com/RikkaW/libcxx-prefab)
 
 ## 许可证
-[Tine](https://github.com/canyie/Tine) Copyright (c) [canyie](http://github.com/canyie)
 
-[AndroidELF](https://github.com/ganyao114/AndroidELF)  Copyright (c) [Swift Gan](https://github.com/ganyao114)
+基于 **反 996 许可证 1.0 版** 授权，副本见
+<https://github.com/996icu/996.ICU/blob/master/LICENSE_CN>。
 
-[Dobby](https://github.com/jmpews/Dobby)  Copyright (c) [jmpews](https://github.com/jmpews)
-
-根据 反 996 许可证 1.0 版 （下文称“此许可证”）获得许可。
-
-除非遵守此许可证，否则不得使用本 Tine 项目。
-
-您可以在以下位置找到此许可证的副本：
-
-https://github.com/996icu/996.ICU/blob/master/LICENSE_CN
+Pine Copyright (c) [canyie](https://github.com/canyie) · AndroidELF Copyright (c) [Swift Gan](https://github.com/ganyao114) · Dobby Copyright (c) [jmpews](https://github.com/jmpews)。

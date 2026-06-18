@@ -1,189 +1,202 @@
-# Tine [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
+# Tine
 
-[中文版本](README_cn.md)
-## Introduction
-Tine is a dynamic java method hook framework on ART runtime, which can intercept almost all java method calls in the current process.
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
+[![Android](https://img.shields.io/badge/Android-4.4%20~%2015-3DDC84.svg)](#supported-versions)
 
-Currently it supports Android 4.4(ART only) ~ **15 Beta 4** with thumb-2/arm64 architecture.
+[中文文档](README_cn.md)
 
-About its working principle, you can refer to this Chinese [article](https://canyie.github.io/2020/04/27/dynamic-hooking-framework-on-art/).
+**Tine** is a hardened, re-branded fork of [Pine](https://github.com/canyie/pine) — a runtime, in-process Java method hook framework for the Android ART runtime. It can intercept almost any Java method call inside the current process, without root and without modifying the APK.
 
-Note: For Android 6.0 devices with arm32/thumb-2 architectures, the arguments may be wrong; and for Android 9.0+, Tine will disable the hidden api restriction policy.
+This fork is **not a drop-in re-upload**. It changes two things that matter in practice:
 
-~~The name, Tine, represents a class of antipsychotic drugs represented by Quetiapine and Clozapine. It is also an acronym for "Tine Is Not Epic".~~
+1. **Fingerprint reduction** — the framework was renamed from Pine to Tine so the most obvious, easily-scanned static signatures (Java package, public class names, the shipped `.so`/`.aar` names) no longer scream "Pine".
+2. **A real crash fix** — it closes a long-standing `SIGSEGV` that happened when a moving GC relocated a hooked method's backup while you were calling the original implementation.
 
-## Usage
-### Basic Usage
-[![Download](https://img.shields.io/maven-central/v/com.android.tine/core.svg)](https://repo1.maven.org/maven2/com/android/tine/core/)
+> Everything else (the ART internals, trampolines, Xposed bridge) is inherited from upstream Pine — full credit to [canyie](https://github.com/canyie). See [Credits](#credits).
 
-Add dependencies in build.gradle (like this):
+---
+
+## 📢 关注公众号 / Follow us
+
+<div align="center">
+  <img src="https://blog-img-1393828675.cos.ap-shanghai.myqcloud.com/rreversewechat/wechatsearch.png" alt="关注公众号" width="340" />
+  <br/>
+  <sub>微信扫码或搜索关注公众号，获取更多 Android 逆向 / Hook / 反检测 相关内容与本项目更新</sub>
+</div>
+
+---
+
+## What this fork changes (vs. upstream Pine)
+
+| Area | Upstream Pine | Tine (this fork) |
+|------|---------------|------------------|
+| Java package | `top.canyie.pine` | `com.android.tine` |
+| Native library | `libpine.so` | `libtine.so` |
+| Public entry classes | `Pine`, `PineConfig`, … | `Tine`, `TineConfig`, … |
+| Maven coordinates | `top.canyie.pine:*` | `com.android.tine:*` |
+| Moving-GC backup crash | present (`// FIXME: GC happens here ... will crash backup calling`) | **fixed** — see below |
+
+### 🛡️ Fix: moving-GC backup `SIGSEGV`
+
+Calling the original implementation of a hooked method (`invokeOriginalMethod` / `callBackupMethod`) could crash with a native `SIGSEGV` if an Android moving collector (CC on 8–12, CMC on 13+) relocated the backup method's `declaring_class` at the wrong moment. The backup `ArtMethod` is `malloc`-ed and therefore invisible to the GC, so its `declaring_class` was left dangling after a heap compaction.
+
+Tine closes the window deterministically by disabling **only the moving GC** for the short duration of a backup call (the same primitive `GetPrimitiveArrayCritical` relies on), and degrades to the old behavior when the required ART symbols can't be resolved — so there is **no regression** on unsupported ROMs.
+
+📄 Full write-up: [docs/moving-gc-backup-fix.md](docs/moving-gc-backup-fix.md)
+
+> ⚠️ Honest scope note: fingerprint reduction currently covers the **Java/API layer and the shipped artifacts** (package, class names, `libtine.so`, `*.aar`). Internal C++ namespaces/symbols still contain some `pine` strings. If you need a deeper scrub, that is a known follow-up.
+
+---
+
+## <a name="supported-versions"></a>Supported versions
+
+- Android **4.4 (ART only) ~ 15**, on `thumb-2` / `arm64`.
+- Caveats: on Android 6.0 + arm32/thumb-2, parsed arguments may be wrong; on Android 9.0+, Tine disables the hidden-API restriction policy on init.
+
+---
+
+## 📦 Getting it
+
+This fork is **not published to Maven Central** (the `com.android.tine:*` coordinates do not exist there). Use one of the two options below.
+
+### Option A — Prebuilt AAR from Releases (recommended)
+
+1. Download `core-release.aar` (plus `xposed-release.aar` / `enhances-release.aar` if you need them) from the [Releases](https://github.com/taisuii/tine/releases) page.
+2. Drop them into your module's `libs/` directory.
+3. Reference them in `build.gradle`:
+
 ```groovy
+android {
+    // AARs already contain the native libs (libtine.so, etc.)
+}
+
 dependencies {
-    implementation 'com.android.tine:core:<version>'
+    implementation files('libs/core-release.aar')
+    // optional:
+    // implementation files('libs/xposed-release.aar')
+    // implementation files('libs/enhances-release.aar')
 }
 ```
-Basic configuration:
-```java
-TineConfig.debug = true; // Do we need to print more detailed logs?
-TineConfig.debuggable = BuildConfig.DEBUG; // Is this process debuggable?
+
+### Option B — Build from source
+
+Requirements: Android SDK (platform 34), **NDK `25.2.9519653`**, **CMake `3.22.1`**, JDK 17.
+
+```bash
+# 1. Clone WITH submodules (xz-embedded + dobby are required to build the native code)
+git clone --recursive https://github.com/taisuii/tine.git
+cd tine
+# already cloned without --recursive? then:
+git submodule update --init --recursive
+
+# 2. Point the build at your SDK (this repo intentionally does not commit local.properties)
+echo "sdk.dir=/absolute/path/to/Android/Sdk" > local.properties
+
+# 3. Build the release AARs
+./gradlew :core:assembleRelease :xposed:assembleRelease :enhances:assembleRelease
 ```
 
-Example 1: monitor the creation of activities
+Outputs land in `*/build/outputs/aar/`.
+
+---
+
+## 🚀 Usage
+
+```java
+// Configure once, as early as possible (ideally before other threads start)
+TineConfig.debug = true;                    // verbose logs
+TineConfig.debuggable = BuildConfig.DEBUG;  // keep this in sync with your app's debuggable flag
+```
+
+### Hook a method (before / after)
+
 ```java
 Tine.hook(Activity.class.getDeclaredMethod("onCreate", Bundle.class), new MethodHook() {
     @Override public void beforeCall(Tine.CallFrame callFrame) {
-        Log.i(TAG, "Before " + callFrame.thisObject + " onCreate()");
+        Log.i(TAG, "before " + callFrame.thisObject + ".onCreate()");
     }
-
     @Override public void afterCall(Tine.CallFrame callFrame) {
-        Log.i(TAG, "After " + callFrame.thisObject + " onCreate()");
+        Log.i(TAG, "after  " + callFrame.thisObject + ".onCreate()");
     }
 });
 ```
 
-Example 2: monitor the creation and destroy of all java threads
+`Tine.CallFrame` is the equivalent of Xposed's `MethodHookParam` — read/replace `args`, read `thisObject`, set the return value, or call the original via `callFrame.invokeOriginalMethod()`.
+
+### Replace a method outright
+
 ```java
-final MethodHook runHook = new MethodHook() {
-    @Override public void beforeCall(Tine.CallFrame callFrame) throws Throwable {
-        Log.i(TAG, "Thread " + callFrame.thisObject + " started...");
-    }
-
-    @Override public void afterCall(Tine.CallFrame callFrame) throws Throwable {
-        Log.i(TAG, "Thread " + callFrame.thisObject + " exit...");
-    }
-};
-
-Tine.hook(Thread.class.getDeclaredMethod("start"), new MethodHook() {
-    @Override public void beforeCall(Tine.CallFrame callFrame) {
-        Tine.hook(ReflectionHelper.getMethod(callFrame.thisObject.getClass(), "run"), runHook);
-    }
-});
-```
-
-Example 3: force allow any threads to modify ui:
-```java
+// e.g. let any thread touch the UI (don't ship this — for testing only)
 Method checkThread = Class.forName("android.view.ViewRootImpl").getDeclaredMethod("checkThread");
 Tine.hook(checkThread, MethodReplacement.DO_NOTHING);
 ```
 
-### Xposed Support
-[![Download](https://img.shields.io/maven-central/v/com.android.tine/xposed.svg)](https://repo1.maven.org/maven2/com/android/tine/xposed/)
+### Xposed-style API (`com.android.tine:xposed` / `xposed-release.aar`)
 
-Tine supports hooking methods in Xposed-style and loading Xposed modules. (Only java method hooking is supported. Modules using unsupported features like Resource-hooking won't work.)
-```groovy
-implementation 'com.android.tine:xposed:<version>'
-```
-Directly hook methods in Xposed-style:
+Tine can run Xposed-style hooks and load Xposed modules. **Only Java method hooking is supported** — modules relying on Resource hooks, `TsSharedPreferences`, etc. won't work.
+
 ```java
 TsHelpers.findAndHookMethod(TextView.class, "setText",
-                CharSequence.class, TextView.BufferType.class, boolean.class, int.class,
-                new TsMethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                        Log.e(TAG, "Before TextView.setText");
-                        param.args[0] = "hooked";
-                    }
+        CharSequence.class, TextView.BufferType.class, boolean.class, int.class,
+        new TsMethodHook() {
+            @Override protected void beforeHookedMethod(MethodHookParam param) {
+                param.args[0] = "hooked";
+            }
+        });
 
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        Log.e(TAG, "After TextView.setText");
-                    }
-                });
-```
-or like this:
-```java
-TsBridge.hookMethod(target, callback);
-```
-
-and you can load xposed modules (resources hook is not supported now):
-```java
-// 1. load modules
+// load an Xposed module
 TineModule.loadModule(new File(modulePath));
-
-// 2. call all 'ILoadPackageHook' callback
 TineModule.onPackageLoad(packageName, processName, appInfo, isFirstApp, classLoader);
 ```
-Note:
-1. Hooks will only take effect in the current process. If you want hooks take effect in other processes, inject your code into them first. There's nothing to do with us.
-2. Modules that use unsupported features (e.g. Resources hook or TsSharedPreferences) will not work.
 
-### Enhanced Features
-[![Download](https://img.shields.io/maven-central/v/com.android.tine/enhances.svg)](https://repo1.maven.org/maven2/com/android/tine/enhances/)
+If module APIs are called from outside your module, keep them with ProGuard:
 
-With [Dobby](https://github.com/jmpews/Dobby), you can use some enhanced features:
-```groovy
-implementation 'com.android.tine:enhances:<version>'
 ```
-
-- Delay hook (aka pending hook) support, hooking static methods without initializing its declaring class immediately:
-```java
-TineEnhances.enableDelayHook();
-```
-
-### ProGuard
-If you use Xposed features and Xposed APIs need to be called outside your module (e.g. you call `TineModule.loadModule()` to load external modules):
-```
-# Keep Xposed APIs
 -keep class com.android.bridge.** { *; }
 -keep class android.** { *; }
 ```
 
-## Known issues
-- May not be compatible with some devices/systems.
+### Enhanced features (`com.android.tine:enhances` / `enhances-release.aar`)
 
-- Due to [#11](https://github.com/canyie/Tine/issues/11), we recommend hooking methods with less concurrency as much as possible, for example:
+Backed by [Dobby](https://github.com/jmpews/Dobby). Enables, for example, **delay (pending) hook** — hook a static method without forcing its declaring class to initialize immediately:
+
+```java
+TineEnhances.enableDelayHook();
+```
+
+> Hooks only take effect **in the current process**. To affect another process, inject your code into it first — that is out of scope for this library.
+
+---
+
+## ⚠️ Known issues
+
+- May be incompatible with some devices/ROMs.
+- Prefer hooking low-concurrency methods. If a hot, highly-concurrent method must be hooked, hook a less-contended inner method instead:
+
 ```java
 public static void method() {
-    synchronized (sLock) {
-        methodLocked();
-    }
+    synchronized (sLock) { methodLocked(); }   // hook methodLocked(), not method()
 }
-
-private static void methodLocked() {
-    // ...
-}
+private static void methodLocked() { /* ... */ }
 ```
-In the example, we recommend you to hook `methodLocked` instead of `method`.
 
-- Tine will disable hidden api policy on initialization by default. Due to an ART bug, if a thread changes hidden api policy while another thread is calling a API that lists members of a class, a out-of-bounds write may occur and causes crashes. We have no way to fix system bugs, so the only way is, initialize our library before other threads is started to avoid the race condition. For more info, see tiann/FreeReflection#60.
+- Tine disables the hidden-API policy on init. Due to an ART bug, changing that policy from one thread while another lists a class's members can trigger an out-of-bounds write and crash. Initialize Tine **before** other threads start to avoid the race (see [tiann/FreeReflection#60](https://github.com/tiann/FreeReflection/issues/60)).
+- Found a bug? Open an issue at [taisuii/tine/issues](https://github.com/taisuii/tine/issues).
 
-- For more, see [issues](https://github.com/canyie/Tine/issues).
-
-## Discussion
-[QQ Group：949888394](https://shang.qq.com/wpa/qunwpa?idkey=25549719b948d2aaeb9e579955e39d71768111844b370fcb824d43b9b20e1c04)
-[Telegram Group: @DreamlandFramework](https://t.me/DreamlandFramework)
-
-## 关注公众号
-<div align="center">
-  <img src="https://blog-img-1393828675.cos.ap-shanghai.myqcloud.com/rreversewechat/wechatsearch.png" alt="关注公众号" width="320" />
-  <br/>
-  <sub>扫码或微信搜索关注公众号，获取更多 Android 逆向 / Hook 相关内容与更新</sub>
-</div>
+---
 
 ## Credits
-- [SandHook](https://github.com/ganyao114/SandHook)
-- [Epic](https://github.com/tiann/epic)
-- [AndroidELF](https://github.com/ganyao114/AndroidELF)
-- [FastHook](https://github.com/turing-technician/FastHook)
-- [YAHFA](https://github.com/PAGalaxyLab/YAHFA)
-- [Dobby](https://github.com/jmpews/Dobby)
-- [LSPosed](https://github.com/LSPosed/LSPosed)
-- [libcxx-prefab](https://github.com/RikkaW/libcxx-prefab)
+
+This project stands entirely on upstream **[Pine](https://github.com/canyie/pine)** by [canyie](https://github.com/canyie); the implementation principle is described in [this article](https://canyie.github.io/2020/04/27/dynamic-hooking-framework-on-art/).
+
+- [Pine](https://github.com/canyie/pine) — the upstream framework this fork is built on
+- [SandHook](https://github.com/ganyao114/SandHook) · [Epic](https://github.com/tiann/epic) · [YAHFA](https://github.com/PAGalaxyLab/YAHFA) · [FastHook](https://github.com/turing-technician/FastHook)
+- [AndroidELF](https://github.com/ganyao114/AndroidELF) — ELF symbol lookup
+- [Dobby](https://github.com/jmpews/Dobby) · [LSPosed](https://github.com/LSPosed/LSPosed) · [libcxx-prefab](https://github.com/RikkaW/libcxx-prefab)
 
 ## License
-[Tine](https://github.com/canyie/Tine) Copyright (c) [canyie](http://github.com/canyie)
 
-[AndroidELF](https://github.com/ganyao114/AndroidELF)  Copyright (c) [Swift Gan](https://github.com/ganyao114)
+Licensed under the **Anti 996 License, Version 1.0**. You may obtain a copy at
+<https://github.com/996icu/996.ICU/blob/master/LICENSE>.
 
-[Dobby](https://github.com/jmpews/Dobby)  Copyright (c) [jmpews](https://github.com/jmpews)
-
-Licensed under the Anti 996 License, Version 1.0 (the "License");
-
-you may not use this "Tine" project except in compliance with the License.
-
-You may obtain a copy of the License at
-
-https://github.com/996icu/996.ICU/blob/master/LICENSE
-
-
-compile: gradlew :core:assembleRelease :xposed:assembleRelease
+Pine Copyright (c) [canyie](https://github.com/canyie) · AndroidELF Copyright (c) [Swift Gan](https://github.com/ganyao114) · Dobby Copyright (c) [jmpews](https://github.com/jmpews).
