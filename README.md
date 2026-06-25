@@ -1,5 +1,5 @@
 # Tine
-
+## 大家还是用Lsplant吧，又继续研究了半天，只能缓解GC问题，不能根治😭
 [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 [![Android](https://img.shields.io/badge/Android-4.4%20~%2015-3DDC84.svg)](#supported-versions)
 
